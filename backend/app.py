@@ -238,6 +238,9 @@ def shutdown_session(exception=None):
         rag_system.close()
         rag_system = None
 
+# ADD THIS TO: app.py
+# ============================================
+
 @app.route('/api/full-graph', methods=['GET'])
 def get_full_graph():
     """

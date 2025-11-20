@@ -58,10 +58,10 @@ class GraphRAGSystem:
     def build_schema_prompt(self):
         s = self.get_schema()
         return f"""
-            NODE LABELS: {s["labels"]}
-            RELATIONSHIP TYPES: {s["relationships"]}
-            PROPERTIES: {s["properties"]}
-            """
+NODE LABELS: {s["labels"]}
+RELATIONSHIP TYPES: {s["relationships"]}
+PROPERTIES: {s["properties"]}
+"""
 
     # ================= Entity extraction =================
     def extract_entities(self, question):
@@ -213,7 +213,7 @@ class GraphRAGSystem:
             print("[!] Context truncated to fit token limit")
 
         prompt = f"""
-            You are an expert in the domain of knowledge graphs. You are answering questions using a knowledge graph that was explored via APOC subgraph traversal.
+            You are an expert in the domain of movies. You are answering questions using a knowledge graph that was explored via APOC subgraph traversal.
 
             {context_text}
 
@@ -222,8 +222,8 @@ class GraphRAGSystem:
             INSTRUCTIONS:
             - Use ONLY the nodes and relationships shown above
             - Follow the relationship paths to answer the question
-            - Be explicit about which nodes/relationships led to the answer (put a tick in the start if found in the graph: ✅)
-            - If the subgraph doesn't contain the answer, say so (put a cross in the start if not found in the graph: ❌)
+            - Be explicit about which nodes/relationships led to the answer
+            - If the subgraph doesn't contain the answer, say so
             - Keep answer concise (2-4 sentences)
 
             ANSWER:
