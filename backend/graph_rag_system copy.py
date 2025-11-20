@@ -6,7 +6,7 @@ from collections import deque
 
 
 class GraphRAGSystem:
-    def __init__(self, uri, user, password, openai_api_key, openai_model="gpt-4o"):
+    def __init__(self, uri, user, password, openai_api_key, openai_model):
         self.driver = GraphDatabase.driver(uri, auth=(user, password))
 
         if not openai_api_key:
