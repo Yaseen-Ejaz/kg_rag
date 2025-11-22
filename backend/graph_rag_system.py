@@ -3,6 +3,7 @@ from openai import OpenAI
 import re
 import json
 from collections import deque
+import time
 
 
 class GraphRAGSystem:
@@ -221,7 +222,10 @@ class GraphRAGSystem:
 
             INSTRUCTIONS:
             - Use ONLY the nodes and relationships shown above
-            - Follow the relationship paths to answer the question
+            - Give the answer based on the graph context in a sentence
+            - If there are multiple subgraphs, you can combine information from them
+            - If a list is returned, format it with commas
+            - Do not put any * or markdown formatting in the answer
             - Be explicit about which nodes/relationships led to the answer (put a tick in the start if found in the graph: ✅)
             - If the subgraph doesn't contain the answer, say so (put a cross in the start if not found in the graph: ❌)
             - Keep answer concise (2-4 sentences)
@@ -234,6 +238,9 @@ class GraphRAGSystem:
 
     # ================= Main pipeline =================
     def ask(self, question, max_depth=5, max_nodes_per_entity=300):
+        # Start timing
+        start_time = time.time()
+        
         print(f"\n{'='*60}")
         print(f"QUESTION: {question}")
         print(f"{'='*60}\n")
@@ -241,25 +248,33 @@ class GraphRAGSystem:
         entities = self.extract_entities(question)
         if not entities:
             print("[!] No entities found, trying a schema-based fallback")
+            elapsed_time = time.time() - start_time
             return {
                 "question": question,
                 "entities": [],
                 "context": [],
-                "answer": "No specific entities found in question. Please rephrase with specific names or concepts."
+                "answer": "No specific entities found in question. Please rephrase with specific names or concepts.",
+                "processing_time": round(elapsed_time, 2)
             }
 
         print("\n[STEP] Building context via APOC subgraph traversal...")
         context = self.assemble_bfs_context(entities, max_depth=max_depth, max_nodes=max_nodes_per_entity)
 
         if not context:
+            elapsed_time = time.time() - start_time
             return {
                 "question": question,
                 "entities": entities,
                 "context": [],
-                "answer": f"Could not find nodes matching: {entities}"
+                "answer": f"Could not find nodes matching: {entities}",
+                "processing_time": round(elapsed_time, 2)
             }
 
         answer = self.generate_answer_from_bfs(question, context)
+        
+        # End timing
+        elapsed_time = time.time() - start_time
+        print(f"\n[+] Total processing time: {elapsed_time:.2f} seconds")
 
         return {
             "question": question,
@@ -270,7 +285,8 @@ class GraphRAGSystem:
                 "subgraphs_explored": len(context),
                 "total_nodes": sum(ctx["subgraph"]["total_nodes"] for ctx in context),
                 "total_edges": sum(ctx["subgraph"]["total_edges"] for ctx in context)
-            }
+            },
+            "processing_time": round(elapsed_time, 2)
         }
 
     # ================= Visualization helper =================
@@ -285,6 +301,9 @@ class GraphRAGSystem:
             print(f"Subgraphs Explored: {stats['subgraphs_explored']}")
             print(f"Total Nodes: {stats['total_nodes']}")
             print(f"Total Edges: {stats['total_edges']}")
+        
+        if "processing_time" in result:
+            print(f"Processing Time: {result['processing_time']}s")
 
         print("\n" + "="*60)
         print("ANSWER")
@@ -294,4 +313,3 @@ class GraphRAGSystem:
 
     def close(self):
         self.driver.close()
-
