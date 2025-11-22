@@ -1,3 +1,4 @@
+import spacy
 from neo4j import GraphDatabase
 from openai import OpenAI
 import re
@@ -12,12 +13,107 @@ class GraphRAGSystem:
         if not openai_api_key:
             raise ValueError("Missing OpenAI API key.")
 
-        # The OpenAI client you used previously
         self.openai = OpenAI(api_key=openai_api_key)
         self.openai_model = openai_model
+        
+        # Load spaCy model
+        try:
+            self.nlp = spacy.load("en_core_web_sm")
+            print("[+] spaCy model loaded")
+        except OSError:
+            print("[!] spaCy model not found. Run: python -m spacy download en_core_web_sm")
+            self.nlp = None
 
         print("\n[+] Connected to Neo4j")
         print("[+] OpenAI LLM ready\n")
+
+    # ================= Entity extraction with spaCy =================
+    def extract_entities(self, question):
+        """Use spaCy to extract potential entity names from the question."""
+        if not self.nlp:
+            print("[!] spaCy not available, falling back to LLM")
+            return self.extract_entities_llm(question)
+        
+        doc = self.nlp(question)
+        entities = []
+        
+        print(f"[DEBUG] Processing question: {question}")
+        
+        # Extract named entities
+        for ent in doc.ents:
+            print(f"[DEBUG] Found entity: {ent.text} ({ent.label_})")
+            # Focus on entity types likely to be in a movie graph
+            if ent.label_ in ['PERSON', 'ORG', 'WORK_OF_ART', 'GPE', 'EVENT', 'PRODUCT', 'FAC', 'NORP']:
+                entities.append(ent.text)
+        
+        # Extract proper nouns (capitalized words) as backup
+        for token in doc:
+            if token.pos_ == 'PROPN' and token.text not in entities:
+                print(f"[DEBUG] Found proper noun: {token.text}")
+                entities.append(token.text)
+        
+        # Look for quoted strings (often movie titles)
+        quoted = re.findall(r'"([^"]+)"', question)
+        if quoted:
+            print(f"[DEBUG] Found quoted strings: {quoted}")
+        entities.extend(quoted)
+        quoted = re.findall(r"'([^']+)'", question)
+        entities.extend(quoted)
+        
+        # Look for capitalized multi-word phrases (common in movie titles)
+        # Example: "The Matrix" or "Forrest Gump"
+        capitalized_phrases = re.findall(r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\b', question)
+        if capitalized_phrases:
+            print(f"[DEBUG] Found capitalized phrases: {capitalized_phrases}")
+        entities.extend(capitalized_phrases)
+        
+        # Remove duplicates while preserving order
+        entities = list(dict.fromkeys(entities))
+        
+        # Filter out common words that aren't entities
+        stop_words = {'movie', 'film', 'actor', 'director', 'person', 'company', 
+                     'movies', 'films', 'actors', 'directors', 'people', 'what', 'who',
+                     'where', 'when', 'how', 'why', 'the', 'a', 'an'}
+        entities = [e for e in entities if e.lower() not in stop_words and len(e) > 1]
+        
+        print(f"\n[+] Extracted entities (spaCy): {entities}")
+        
+        # If spaCy found nothing, fall back to LLM
+        if not entities:
+            print("[!] spaCy found no entities, falling back to LLM")
+            return self.extract_entities_llm(question)
+        
+        return entities
+
+    # ================= LLM fallback (optional) =================
+    def extract_entities_llm(self, question):
+        """Fallback to LLM-based entity extraction if spaCy fails."""
+        prompt = f"""
+            Extract entity names from the question that might exist in a knowledge graph.
+
+            GRAPH SCHEMA:
+            {self.build_schema_prompt()}
+
+            QUESTION: {question}
+
+            Return ONLY a JSON list of potential entity names (proper nouns, names, organizations, etc).
+            Format: ["Entity1", "Entity2"]
+            If no entities found, return: []
+
+            IMPORTANT: Return ONLY the JSON array, no other text.
+            """
+        response = self._call_llm(prompt, max_tokens=200)
+
+        try:
+            match = re.search(r"\[.*\]", response, re.DOTALL)
+            if match:
+                entities = json.loads(match.group())
+                print(f"\n[+] Extracted entities (LLM): {entities}")
+                return entities
+            return []
+        except Exception as e:
+            print(f"[!] Entity extraction error: {e}")
+            return []
 
     # ================= LLM helper =================
     def _call_llm(self, prompt, max_tokens=500):
@@ -63,36 +159,6 @@ class GraphRAGSystem:
             PROPERTIES: {s["properties"]}
             """
 
-    # ================= Entity extraction =================
-    def extract_entities(self, question):
-        """Use the LLM to extract potential entity names mentioned in question."""
-        prompt = f"""
-            Extract entity names from the question that might exist in a knowledge graph.
-
-            GRAPH SCHEMA:
-            {self.build_schema_prompt()}
-
-            QUESTION: {question}
-
-            Return ONLY a JSON list of potential entity names (proper nouns, names, organizations, etc).
-            Format: ["Entity1", "Entity2"]
-            If no entities found, return: []
-
-            IMPORTANT: Return ONLY the JSON array, no other text.
-            """
-        response = self._call_llm(prompt, max_tokens=200)
-
-        try:
-            match = re.search(r"\[.*\]", response, re.DOTALL)
-            if match:
-                entities = json.loads(match.group())
-                print(f"\n[+] Extracted entities: {entities}")
-                return entities
-            return []
-        except Exception as e:
-            print(f"[!] Entity extraction error: {e}")
-            return []
-
     # ================= Node matching (fuzzy) =================
     def find_matching_nodes(self, entity_name, limit=5):
         """Return list of candidate nodes for an entity name (fuzzy match)."""
@@ -119,11 +185,7 @@ class GraphRAGSystem:
 
     # ================= APOC-based multi-hop traversal =================
     def apoc_subgraph(self, start_node_name, max_depth=5, max_nodes=300):
-        """Use APOC to get the subgraph around a starting node up to max_depth.
-
-        Returns a dict with nodes (list of maps) and relationships (list of maps).
-        """
-        # Find a start node fuzzily and run apoc.path.subgraphAll
+        """Use APOC to get the subgraph around a starting node up to max_depth."""
         query = """
         MATCH (start)
         WHERE toLower(coalesce(start.name, '')) CONTAINS toLower($name)
@@ -143,7 +205,6 @@ class GraphRAGSystem:
         nodes = rec.get("nodes", [])
         rels = rec.get("relationships", [])
 
-        # Optionally trim nodes/relationships to max_nodes
         if len(nodes) > max_nodes:
             nodes = nodes[:max_nodes]
         if len(rels) > max_nodes * 2:
@@ -294,4 +355,3 @@ class GraphRAGSystem:
 
     def close(self):
         self.driver.close()
-
