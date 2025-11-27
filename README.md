@@ -94,16 +94,6 @@ pip install -r requirements.txt
 2. Go to your database → Plugins
 3. Install APOC
 
-**Using Docker:**
-```bash
-docker run \
-  --name neo4j \
-  -p 7474:7474 -p 7687:7687 \
-  -e NEO4J_AUTH=neo4j/password \
-  -e NEO4J_PLUGINS='["apoc"]' \
-  neo4j:latest
-```
-
 ### Step 4: Set Environment Variables
 ```bash
 export NEO4J_URI="bolt://localhost:7687"
@@ -631,7 +621,7 @@ Contributions are welcome! Please follow these steps:
 ### Development Setup
 ```bash
 # Clone your fork
-git clone https://github.com/yourusername/GraphQuery-LLM.git
+git clone https://github.com/Yaseen-Ejaz/kr_rag.git
 
 # Install development dependencies
 pip install -r requirements-dev.txt
