@@ -31,23 +31,23 @@ User Question → Entity Extraction → Context Assembly → Answer Generation �
 
 ### Pipeline Stages
 
-1. **Entity Extraction** (~0.5-2s)
+1. **Entity Extraction** (~0.4-1.2s)
    - LLM extracts potential entities from question
    - Uses cached Neo4j schema for context
    - Limits to 5 entities for performance
 
-2. **Context Assembly** (~2-5s)
+2. **Context Assembly** (~0.1-0.5s)
    - Parallel node matching with fuzzy search
    - APOC subgraph traversal (max depth: 5, max nodes: 100)
    - ThreadPoolExecutor with 3 workers
    - Comprehensive caching layer
 
-3. **Answer Generation** (~1-3s)
+3. **Answer Generation** (~2-2.8s)
    - Formats subgraphs for LLM consumption
    - Context-aware prompt engineering
    - Path visualization with ✅/❌ indicators
 
-**Total Processing Time: 3-8 seconds**
+**Total Processing Time: 3-5 seconds**
 
 ---
 
@@ -255,12 +255,12 @@ GraphQuery-LLM tracks comprehensive performance metrics for each query:
 
 | Metric | Description | Typical Range |
 |--------|-------------|---------------|
-| **Entity Extraction Time** | Time to extract entities via LLM | 0.5-2s |
-| **Context Assembly Time** | Node matching + graph traversal | 2-5s |
-| **Time to Entity Found** ⭐ | When first entity located in graph | 0.5-2s |
-| **Answer Generation Time** | LLM processing to generate answer | 1-3s |
-| **Time to Entity + Answer** ⭐ | Combined latency indicator | 2-5s |
-| **Total Processing Time** | End-to-end query time | 3-8s |
+| **Entity Extraction Time** | Time to extract entities via LLM | 0.4-1.2s |
+| **Context Assembly Time** | Node matching + graph traversal | 0.1-0.5s |
+| **Time to Entity Found** ⭐ | When first entity located in graph | 0.1-0.2s |
+| **Answer Generation Time** | LLM processing to generate answer | 2-2.8s |
+| **Time to Entity + Answer** ⭐ | Combined latency indicator | 0.2-0.6s |
+| **Total Processing Time** | End-to-end query time | 3-5s |
 
 ### Performance Optimizations
 
