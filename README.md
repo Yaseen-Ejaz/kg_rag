@@ -275,7 +275,7 @@ GraphQuery-LLM tracks comprehensive performance metrics for each query:
 
 ## 🗺️ System Architecture
 
-`![alt text](/images/architecture/GraphQuery-LLM-SystemArch.png)`
+`![System Architecture](/architecture/GraphQuery-LLM-SystemArch.png)`
 
 https://github.com/Yaseen-Ejaz/kg_rag/blob/master/architecture/GraphQuery-LLM-SystemArch.png
 
