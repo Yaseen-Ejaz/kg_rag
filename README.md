@@ -274,6 +274,9 @@ GraphQuery-LLM tracks comprehensive performance metrics for each query:
 ---
 
 ## 🗺️ System Architecture
+
+https://github.com/Yaseen-Ejaz/kg_rag/blob/master/architecture/GraphQuery-LLM-SystemArch.png
+
 ```mermaid
 flowchart TB
     User(["User"]) --> NextJS["Next.js Frontend"]
