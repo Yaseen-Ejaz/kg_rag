@@ -618,10 +618,6 @@ flake8 graph_rag_system.py
 
 ---
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 ---
 
 ## 🙏 Acknowledgments
@@ -634,9 +630,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Contact
 
-**Your Name** - [@yourtwitter](https://twitter.com/yourtwitter) - your.email@example.com
-
-**Project Link:** [https://github.com/yourusername/GraphQuery-LLM](https://github.com/yourusername/GraphQuery-LLM)
+**Project Link:** [https://github.com/Yaseen-Ejaz/GraphQuery-LLM](https://github.com/Yaseen-Ejaz/GraphQuery-LLM)
 
 ---
 
@@ -671,7 +665,7 @@ Tested on: Apple M1 Pro, 16GB RAM, Neo4j 5.14, OpenAI GPT-4o
 
 <div align="center">
 
-**Made with ❤️ and ☕ by Your Name**
+**Made with ❤️ and ☕ by Yaseen**
 
 ⭐ Star this repo if you find it helpful!
 
