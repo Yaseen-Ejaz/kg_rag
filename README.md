@@ -631,12 +631,6 @@ flake8 graph_rag_system.py
 
 ---
 
-## 📞 Contact
-
-**Project Link:** [https://github.com/Yaseen-Ejaz/GraphQuery-LLM](https://github.com/Yaseen-Ejaz/GraphQuery-LLM)
-
----
-
 ## 🗺️ Roadmap
 
 - [ ] Support for multiple LLM providers (Anthropic Claude, Google Gemini)
